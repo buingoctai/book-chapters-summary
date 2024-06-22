@@ -4,44 +4,45 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	// "io/ioutil"
 	"net/http"
 	"strings"
 
-	"github.com/textminer/textminer/v2/sentences"
-	"github.textminer/textminer/v2/stopwords"
+	// "github.com/textminer/textminer/v2/sentences"
+	// "github.textminer/textminer/v2/stopwords"
 )
 
 // OpenAI API details (replace with your actual API key and endpoint)
 const (
-	openAIKey   = "YOUR_OPENAI_API_KEY"
+	openAIKey   = "sk-team2024-home-test-vP00R3HgNtYAroFA1rRbT3BlbkFJ6XTugV2XnCDwPKOnwg18"
 	openAIEndpoint = "https://api.openai.com/v1/completions"
 )
 
 // summarizeChapter takes chapter text and returns a summary using OpenAI API
 func summarizeChapter(text string) (string, error) {
 	// Preprocess text
-	text = strings.ToLower(text)
-	sentences, err := sentences.SentenceSegment(text, "en")
-	if err != nil {
-		return "", err
-	}
+	// text = strings.ToLower(text)
+	// sentences, err := sentences.SentenceSegment(text, "en")
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	// Remove stop words
-	stopWords := stopwords.LoadStopwords("en")
-	var chapterText string
-	for _, sentence := range sentences {
-		if !stopwords.IsStopword(sentence) {
-			chapterText += sentence + " "
-		}
-	}
+	// stopWords := stopwords.LoadStopwords("en")
+	// var chapterText string
+	// for _, sentence := range sentences {
+	// 	if !stopwords.IsStopword(sentence) {
+	// 		chapterText += sentence + " "
+	// 	}
+	// }
 
 	// Prepare OpenAI request data
 	data := map[string]interface{}{
-		"model":  "text-davinci-003", // Replace with the desired OpenAI model for summarization
-		"prompt": "Summarize the following chapter: \n" + chapterText,
+		"model":  "text-davinci-003", // This model is recommended by OpenAI as summarization model. It is not the same as the model above, so it should work fine.
+		"prompt": "Summarize the following chapter: \n" + text,
 		"max_tokens": 150, // Adjust number of tokens for desired summary length (OpenAI charges per token)
-		"n":        1,     // Request only 1 completion (the summary)
+		"temperature": 0.5,
+		// "n":        1,     // Request only 1 completion (the summary)
 	}
 
 	// Create JSON payload
@@ -60,6 +61,9 @@ func summarizeChapter(text string) (string, error) {
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+
+	fmt.Println("summarizeChapter, resp", resp, "err", err)
+
 	if err != nil {
 		return "", err
 	}
@@ -93,27 +97,35 @@ func summarizeChapter(text string) (string, error) {
 
 func main() {
 	// Read book content from file
-	content, err := ioutil.ReadFile("book.txt")
-	if err != nil {
-		fmt.Println("Error reading book file:", err)
-		return
-	}
+	// content, err := ioutil.ReadFile("book.txt")
+	// if err != nil {
+	// 	fmt.Println("Error reading book file:", err)
+	// 	return
+	// }
 
 	// Split book content into chapters (logic depends on chapter separators in your book file)
-	chapters := strings.Split(string(content), "\n\n") // Adjust chapter separator as needed
+	// chapters := strings.Split(string(content), "\n\n") // Adjust chapter separator as needed
+
+	chapters := []string{
+		"Earth is rounded into an ellipsoid with a circumference of about 40,000 km. It is the densest planet in the Solar System. Of the four rocky planets, it is the largest and most massive. Earth is about eight light-minutes away from the Sun and orbits it, taking a year (about 365.25 days) to complete one revolution",
+	}
 
 	var summaries []string
 	for _, chapter := range chapters {
 		// Summarize each chapter
 		summary, err := summarizeChapter(chapter)
+
+
 		if err != nil {
 			fmt.Println("Error summarizing chapter:", err)
 			continue // Skip to next chapter on error
-		}
+		} 
+
+		fmt.Println("Result summarizing chapter:", summary)
 		summaries = append(summaries, summary)
 	}
 
 	// Write summaries to a file
-	summaryContent := strings.Join(summaries, "\n\n")
-	err = ioutil.WriteFile("summaries.txt", []byte(summaryContent), 0644)
+	// summaryContent := strings.Join(summaries, "\n\n")
+	// err = ioutil.WriteFile("summaries.txt", []byte(summaryContent), 0644)
 }
