@@ -1,55 +1,119 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
+	"net/http"
+	"strings"
 
-	"github.com/openai/openai-go/openai"
+	"github.com/textminer/textminer/v2/sentences"
+	"github.textminer/textminer/v2/stopwords"
 )
 
+// OpenAI API details (replace with your actual API key and endpoint)
+const (
+	openAIKey   = "YOUR_OPENAI_API_KEY"
+	openAIEndpoint = "https://api.openai.com/v1/completions"
+)
+
+// summarizeChapter takes chapter text and returns a summary using OpenAI API
+func summarizeChapter(text string) (string, error) {
+	// Preprocess text
+	text = strings.ToLower(text)
+	sentences, err := sentences.SentenceSegment(text, "en")
+	if err != nil {
+		return "", err
+	}
+
+	// Remove stop words
+	stopWords := stopwords.LoadStopwords("en")
+	var chapterText string
+	for _, sentence := range sentences {
+		if !stopwords.IsStopword(sentence) {
+			chapterText += sentence + " "
+		}
+	}
+
+	// Prepare OpenAI request data
+	data := map[string]interface{}{
+		"model":  "text-davinci-003", // Replace with the desired OpenAI model for summarization
+		"prompt": "Summarize the following chapter: \n" + chapterText,
+		"max_tokens": 150, // Adjust number of tokens for desired summary length (OpenAI charges per token)
+		"n":        1,     // Request only 1 completion (the summary)
+	}
+
+	// Create JSON payload
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	// Send HTTP request to OpenAI API
+	req, err := http.NewRequest("POST", openAIEndpoint, bytes.NewReader(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", openAIKey))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Parse response and extract summary
+	var response map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return "", err
+	}
+
+	if _, ok := response["choices"]; !ok {
+		return "", fmt.Errorf("OpenAI response format error")
+	}
+
+	choices := response["choices"].([]interface{})
+	if len(choices) == 0 {
+		return "", fmt.Errorf("OpenAI failed to generate summary")
+	}
+
+	choice := choices[0].(map[string]interface{})
+	summary := choice["text"].(string)
+
+	// Clean summary (remove extra characters)
+	summary = strings.TrimPrefix(summary, "\n")
+	summary = strings.TrimSpace(summary)
+
+	return summary, nil
+}
+
 func main() {
-	// Replace with your OpenAI API key
-	openai.SetApiKey("<YOUR_OPENAI_API_KEY>")
-
-	// Replace with the path to your book text file
-	bookFilePath := "<BOOK_FILE_PATH>"
-
-	// Read book content
-	bookText, err := ioutil.ReadFile(bookFilePath)
+	// Read book content from file
+	content, err := ioutil.ReadFile("book.txt")
 	if err != nil {
-		fmt.Printf("Error reading book file: %v\n", err)
+		fmt.Println("Error reading book file:", err)
 		return
 	}
 
-	// split total content into chapter parts
-	// continue split chapter content into chunks
-	// Prepare input
-	summaryPrompt := "Summarize the following book content:\n" + string(bookText)
+	// Split book content into chapters (logic depends on chapter separators in your book file)
+	chapters := strings.Split(string(content), "\n\n") // Adjust chapter separator as needed
 
-	// OpenAI request
-	request := openai.CompletionRequest{
-		Engine:  "text-davinci-003",
-		Prompt:  summaryPrompt,
-		MaxTokens: 150, // Adjust this value to control summary length
-		N:        1,
-		Stop:     "<|endoftext|>",
-		Temperature: 0,
+	var summaries []string
+	for _, chapter := range chapters {
+		// Summarize each chapter
+		summary, err := summarizeChapter(chapter)
+		if err != nil {
+			fmt.Println("Error summarizing chapter:", err)
+			continue // Skip to next chapter on error
+		}
+		summaries = append(summaries, summary)
 	}
 
-	// Send request
-	response, err := openai.Completions(request)
-	if err != nil {
-		fmt.Printf("Error calling OpenAI API: %v\n", err)
-		return
-	}
-
-	// Process response
-	if len(response.Choices) > 0 {
-		summary := response.Choices[0].Text
-		fmt.Println("Summary:")
-		fmt.Println(summary)
-	} else {
-		fmt.Println("No summary generated.")
-	}
+	// Write summaries to a file
+	summaryContent := strings.Join(summaries, "\n\n")
+	err = ioutil.WriteFile("summaries.txt", []byte(summaryContent), 0644)
 }
