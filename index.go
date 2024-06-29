@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	// "io/ioutil"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -95,6 +95,43 @@ func summarizeChapter(text string) (string, error) {
 	return summary, nil
 }
 
+func uploadHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprintf(w, "Method not allowed")
+		return
+	}
+
+	// Read uploaded file
+	file, _, err := r.FormFile("uploadfile")
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Error reading file: %v", err)
+		return
+	}
+	defer file.Close()
+
+	// Read file bytes
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Error processing file: %v", err)
+		return
+	}
+
+	// Save the file (replace with your logic for saving)
+	err = ioutil.WriteFile("uploaded.txt", fileBytes, 0644)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Error saving file: %v", err)
+		return
+	}
+
+	fmt.Fprintf(w, "File uploaded successfully!")
+}
+
+
 func main() {
 	// Read book content from file
 	// content, err := ioutil.ReadFile("book.txt")
@@ -106,26 +143,31 @@ func main() {
 	// Split book content into chapters (logic depends on chapter separators in your book file)
 	// chapters := strings.Split(string(content), "\n\n") // Adjust chapter separator as needed
 
-	chapters := []string{
-		"Earth is rounded into an ellipsoid with a circumference of about 40,000 km. It is the densest planet in the Solar System. Of the four rocky planets, it is the largest and most massive. Earth is about eight light-minutes away from the Sun and orbits it, taking a year (about 365.25 days) to complete one revolution",
-	}
+	// chapters := []string{
+	// 	"Earth is rounded into an ellipsoid with a circumference of about 40,000 km. It is the densest planet in the Solar System. Of the four rocky planets, it is the largest and most massive. Earth is about eight light-minutes away from the Sun and orbits it, taking a year (about 365.25 days) to complete one revolution",
+	// }
 
-	var summaries []string
-	for _, chapter := range chapters {
-		// Summarize each chapter
-		summary, err := summarizeChapter(chapter)
+	// var summaries []string
+	// for _, chapter := range chapters {
+	// 	// Summarize each chapter
+	// 	summary, err := summarizeChapter(chapter)
 
 
-		if err != nil {
-			fmt.Println("Error summarizing chapter:", err)
-			continue // Skip to next chapter on error
-		} 
+	// 	if err != nil {
+	// 		fmt.Println("Error summarizing chapter:", err)
+	// 		continue // Skip to next chapter on error
+	// 	} 
 
-		fmt.Println("Result summarizing chapter:", summary)
-		summaries = append(summaries, summary)
-	}
+	// 	fmt.Println("Result summarizing chapter:", summary)
+	// 	summaries = append(summaries, summary)
+	// }
 
 	// Write summaries to a file
 	// summaryContent := strings.Join(summaries, "\n\n")
 	// err = ioutil.WriteFile("summaries.txt", []byte(summaryContent), 0644)
+
+
+	http.HandleFunc("/upload", uploadHandler)
+	fmt.Println("Server listening on port 8080")
+	http.ListenAndServe(":8080", nil)
 }
