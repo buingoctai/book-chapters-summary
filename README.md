@@ -27,7 +27,7 @@ Notes:
 
 ### Local Development
 - Main package: app/main.go
-### `Solution (taibn)`
+### `Solution (taibn, taibui-eh)`
 - Please refer to the following documents (problem/solution/workflow/architecture/todo_list) on Notion: https://taibn-docs.notion.site/home-test-1ade0ef0589640ddb39a64a7da1c399f?pvs=4
 - Please take a look at my idea and how I resolved the problem.
 - Feel free to add comments if you have any.
