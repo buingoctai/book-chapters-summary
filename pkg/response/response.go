@@ -14,12 +14,16 @@ var ErrorMessageMap = map[error]string{
 	domain.ErrNotFoundFile:     "File not found",
 	domain.ErrNotFoundFileName: "File name not found",
 	domain.ErrBadParamFile:     "Given Param is not valid",
+
+	domain.ErrFileExceedsLimit: "File size exceeds the allowed limit",
+	domain.ErrFileNotSupported: "File type is not allowed",
+	domain.ErrExistingFile:     "File already exist",
+	domain.ErrOpenAIService:  "OpenAI service error",
+
 	domain.ErrUploadBook:       "Failed to upload book",
 	domain.ErrSummaryBook:      "Failed to summary book",
 
 	domain.ErrInternalServerError: "Internal Server Error",
-	domain.ErrNotFound:            "Not Found",
-	domain.ErrConflict:            "Conflict",
 }
 
 func getErrorMessage(err error) string {
@@ -41,16 +45,20 @@ func GetStatusCode(err error) int {
 		return http.StatusBadRequest
 	case domain.ErrBadParamFile:
 		return http.StatusBadRequest
+	case domain.ErrFileExceedsLimit:
+		return http.StatusBadRequest
+	case domain.ErrFileNotSupported:
+		return http.StatusBadRequest
+	case domain.ErrExistingFile:
+		return http.StatusConflict
+	case domain.ErrOpenAIService:
+		return http.StatusInternalServerError
 	case domain.ErrUploadBook:
 		return http.StatusInternalServerError
 	case domain.ErrSummaryBook:
 		return http.StatusInternalServerError
 	case domain.ErrInternalServerError:
 		return http.StatusInternalServerError
-	case domain.ErrNotFound:
-		return http.StatusNotFound
-	case domain.ErrConflict:
-		return http.StatusConflict
 	default:
 		return http.StatusInternalServerError
 	}

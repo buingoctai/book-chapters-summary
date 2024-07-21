@@ -9,9 +9,8 @@ import (
 
 const maxSize = 10485760 // 10MB
 var allowedTypes = map[string]bool{
-	"jpg":  true,
-	"jpeg": true,
-	"png":  true,
+	"txt":  true,
+	"pdf":  true,
 }
 
 func IsBookValid(formFile *multipart.FileHeader) (bool, error) {

@@ -17,6 +17,4 @@ var (
 	ErrSummaryBook = errors.New("failed to summary book")
 
 	ErrInternalServerError = errors.New("internal Server Error")
-	ErrNotFound            = errors.New("your requested Item is not found")
-	ErrConflict            = errors.New("your Item already exist")
 )
