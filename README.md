@@ -1,4 +1,4 @@
-## Home Test
+## `Home Test`
 ### Book Chapters Summary (fom andynghi@gmail.com)
 Book summarizer:
 1. There is a book with 20 chapters, content in the file `TheArtOfThinkingClearly.txt` here: https://drive.google.com/file/d/1J5b4HCwGiRSy7Lwi8Nu3jLUWtwFCshSR/view?usp=sharing
@@ -27,8 +27,49 @@ Notes:
 
 ### Local Development
 - Main package: app/main.go
-### `Solution (taibn, taibui-eh)`
-- Please refer to the following documents (problem/solution/workflow/architecture/todo_list) on Notion: https://taibn-docs.notion.site/home-test-1ade0ef0589640ddb39a64a7da1c399f?pvs=4
+## `Solution (taibn, taibui-eh)`
 - Please take a look at my idea and how I resolved the problem.
 - Feel free to add comments if you have any.
 - Thank you for your support. The to-do list will be completed as soon as possible.
+
+
+## 1. Problem:
+
+- Summarize Book Chapters (or "Generate Book Chapter Summaries")
+- Export Results to a File
+- Allow Users to View the Book on the Client-Side
+
+## 2. Solution
+
+- Allow users to submit books to learning resources.
+- Use an AI tool to summarize specific books.
+- Automatically crawl learning resources (e.g., books) and save them to the system (optional).
+- Automatically run summaries from the system (optional)
+
+## 3. Workflow
+
+## 4. Architecture
+
+![Untitled](./architecture.png)
+
+## 5. Todo List:
+- [ ] Allow concurrency up to n (configurable, default n=5) requests to OpenAI, to prevent hitting OpenAI's rate limiter. The reason is that sometimes we have a book with hundreds of chapters, and we need to limit concurrent requests to OpenAI.
+- [ ] Replace openAI lib to openAI github lib
+- [ ]  fix duplicate upload file: compare checksum
+- [ ]  can adapt different book format
+    - [ ]  fix word based format
+    - [ ]  support multi formats
+- [ ]  thirty party service:
+    - [ ]  call multi external services: local LM studio, openAI API
+- [ ]  handle large book
+    - [ ]  worker tasks, concurrent tasks
+- [ ]  support more middleman, validate request, handle errors, stantify request payload, normalied output
+- [ ]  unit test
+- [ ]  logging, cmts
+- [ ]  coding stye control
+- [ ]  add workflow into doc.
+- [ ]  save book items to database (optional)
+- [ ]  auto crawl many book (optional)
+- [ ]  auto summary books (optional)
+
+## 6.Evaluation/Improvements
