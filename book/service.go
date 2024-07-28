@@ -2,12 +2,13 @@ package book
 
 import (
 	"bytes"
-	"github.com/buingoctai/book-chapters-summary/domain"
-	"github.com/buingoctai/book-chapters-summary/pkg/third_party/openai"
-	"github.com/buingoctai/book-chapters-summary/pkg/utils"
 	"io"
 	"mime/multipart"
 	"os"
+
+	"github.com/buingoctai/book-chapters-summary/domain"
+	"github.com/buingoctai/book-chapters-summary/pkg/third_party/openai"
+	"github.com/buingoctai/book-chapters-summary/pkg/utils"
 )
 
 type Service struct{}
@@ -65,6 +66,7 @@ func (s *Service) LoadFile(fileName string) (string, error) {
 func (s *Service) SummaryFile(content string) (string, error) {
 	openAIClient := openai.NewClient()
 	summary, err := openAIClient.Summary(content)
+	
 	if err != nil {
 		return "", domain.ErrSummaryBook
 	}

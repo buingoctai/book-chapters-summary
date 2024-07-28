@@ -1,14 +1,23 @@
 package rest
 
 import (
+	"log"
 	"mime/multipart"
 	"strings"
-	"github.com/labstack/echo/v4"
-	// "github.com/sirupsen/logrus"
+	"sync"
+	"time"
+
 	"github.com/buingoctai/book-chapters-summary/domain"
 	"github.com/buingoctai/book-chapters-summary/internal/rest/validator"
 	"github.com/buingoctai/book-chapters-summary/pkg/response"
 	"github.com/buingoctai/book-chapters-summary/pkg/utils"
+	"github.com/labstack/echo/v4"
+	"github.com/sirupsen/logrus"
+)
+
+const (
+	openAICallingConcurrency = 5
+	numberOfRequestPerSecond = 10
 )
 
 // ResponseError represent the response error struct
@@ -91,19 +100,40 @@ func (a *BookHandler) GetBookSummary(c echo.Context) error {
 	}
 
 	chapters := utils.SplitIntoChapters(content, "word")
+	logrus.Info(chapters, len(chapters))	
 
-	var summaries []string
-	for i, chapter := range chapters {
-		if i >= 5 {
-			break
-		}
-		summary, err := a.Service.SummaryFile(chapter)
-		if err != nil {
-			return c.JSON(response.GetStatusCode(err), response.GetError(err))
-		}
+    semaphore := make(chan struct{}, openAICallingConcurrency)
+    var wg sync.WaitGroup
+    var summaries []string
+    var mu sync.Mutex
 
-		summaries = append(summaries, summary)
-	}
+	// Define rate limit (e.g., 10 requests per second)
+	rateLimit := time.Second / numberOfRequestPerSecond
+    ticker := time.NewTicker(rateLimit)
+    defer ticker.Stop()
+	
+    for _, chapter := range chapters {
+        wg.Add(1)
+        go func(chapter string) {
+            defer wg.Done()
+			<-ticker.C // Wait for the ticker
+            semaphore <- struct{}{}
+            defer func() { <-semaphore }()
+
+            summary, err := a.Service.SummaryFile(chapter)
+            if err != nil {
+                log.Printf("Failed to summarize chapter: %v", err)
+                return
+            }
+
+            mu.Lock()
+            summaries = append(summaries, summary)
+            mu.Unlock()
+        }(chapter)
+    }
+
+    wg.Wait()
+
 
 	summaryBookBytes := []byte(strings.Join(summaries, "\n"))
 	summarizedName := "summarized-" + name

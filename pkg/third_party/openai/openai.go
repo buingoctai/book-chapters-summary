@@ -4,12 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
+
 	"github.com/buingoctai/book-chapters-summary/domain"
 )
 
+const (
+    maxRetries   = 5
+)
 
 type OpenAI interface {
 	Summary(content string) (string, error)
@@ -57,11 +63,26 @@ func (c *Client) Summary(content string) (string, error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
+
+	var resp *http.Response
+	for i := 0; i < maxRetries; i++ {
+        resp, err = client.Do(req)
+        if err != nil {
+            return "", err
+        }
+        defer resp.Body.Close()
+
+        if resp.StatusCode == http.StatusOK {
+            break
+        } else if resp.StatusCode == http.StatusTooManyRequests {
+            log.Println("Too Many Requests. Retrying...")
+            time.Sleep(time.Duration(2<<i) * time.Second) // Exponential backoff
+        } else {
+
+            return "", fmt.Errorf("unexpected status code: %v", resp.StatusCode)
+        }
+    }
+
 
 	if resp.StatusCode != http.StatusOK {
 		return "", domain.ErrOpenAIService
